@@ -41,8 +41,28 @@ class BrickBreak extends Phaser.Scene {
     this.background = this.add.image(400, 300, "background");
     this.background.scaleX = 0.25;
     this.background.scaleY = 0.25;
-
+    this.left = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+    this.right = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.RIGHT
+    );
     this.paddle = this.add.rectangle(400, 575, 75, 10, 0xeeeeee);
+  }
+  update() {
+    if (this.left.isDown) {
+      this.paddle.x -= 2;
+    }
+    if (this.right.isDown) {
+      this.paddle.x += 2;
+    }
+    this.createBounds(this.paddle);
+  }
+  createBounds(player) {
+    if (player.x + 37.5 >= 800) {
+      player.x = 800 - 37.5;
+    }
+    if (player.x - 37.5 <= 0) {
+      player.x = 0 + 37.5;
+    }
   }
 }
 
