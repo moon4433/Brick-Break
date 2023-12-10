@@ -41,27 +41,71 @@ class BrickBreak extends Phaser.Scene {
     this.background = this.add.image(400, 300, "background");
     this.background.scaleX = 0.25;
     this.background.scaleY = 0.25;
+
+    // Keyboard Controls
     this.left = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
     this.right = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.RIGHT
     );
-    this.paddle = this.add.rectangle(400, 575, 75, 10, 0xeeeeee);
+    this.spacebar = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.SPACE
+    );
+
+    // Paddle
+    this.paddle = this.add.rectangle(400, 575, 75, 10, 0xaaaaaa);
+    this.paddleSpeed = 3;
+
+    // Ball
+    this.BALL_MAX_SPEED = 5;
+
+    this.ball = this.add.circle(this.paddle.x, this.paddle.y - 10, 5, 0xffffff);
+    this.ball.setCircle(5);
+    console.log(this.ball);
+    this.isBallLaunched = false;
+    this.ballVelocity = new Phaser.Math.Vector2(0, 0);
+    this.ballAcceleration = 3;
+    this.ballDirection = new Phaser.Math.Vector2(0, -1);
   }
   update() {
     if (this.left.isDown) {
-      this.paddle.x -= 2;
+      this.paddle.x -= this.paddleSpeed;
+      if (this.isBallLaunched === false) {
+        this.ballDirection.x = -1;
+      }
     }
     if (this.right.isDown) {
-      this.paddle.x += 2;
+      this.paddle.x += this.paddleSpeed;
+      if (this.isBallLaunched === false) {
+        this.ballDirection.x = 1;
+      }
     }
-    this.createBounds(this.paddle);
+    this.createBounds(this.paddle, this.ball, this.ballDirection);
+    this.ballLaunchControls(this.ball, this.paddle);
+    if (this.isBallLaunched === true) {
+      this.ball.x += this.ballDirection.x * this.ballAcceleration;
+      this.ball.y += this.ballDirection.y * this.ballAcceleration;
+    }
   }
-  createBounds(player) {
+  createBounds(player, ball, ballDirection) {
     if (player.x + 37.5 >= 800) {
       player.x = 800 - 37.5;
-    }
-    if (player.x - 37.5 <= 0) {
+    } else if (player.x - 37.5 <= 0) {
       player.x = 0 + 37.5;
+    }
+    if (ball.x - 5 <= 0) {
+      ballDirection.x = 1;
+    } else if (ball.x + 5 >= 800) {
+      ballDirection.x = -1;
+    }
+    if (ball.y - 5 <= 0) {
+      ballDirection.y = 1;
+    }
+  }
+  ballLaunchControls(ball, player) {
+    if (this.spacebar.isDown) {
+      this.isBallLaunched = true;
+    } else if (this.isBallLaunched === false) {
+      ball.x = player.x;
     }
   }
 }
@@ -71,9 +115,9 @@ const config = {
   width: 800,
   height: 600,
   physics: {
-    default: "arcade",
+    default: "matter",
     arcade: {
-      gravity: { y: 200 },
+      gravity: { y: 0 },
     },
   },
   scene: BrickBreak,
