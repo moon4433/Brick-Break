@@ -36,6 +36,8 @@ class BrickBreak extends Phaser.Scene {
   }
   preload() {
     this.load.image("background", "img/granite.jpg");
+    this.load.image("ball", "img/ball.png");
+    this.load.image("paddle", "img/paddle.png");
   }
   create() {
     this.background = this.add.image(400, 300, "background");
@@ -52,19 +54,35 @@ class BrickBreak extends Phaser.Scene {
     );
 
     // Paddle
-    this.paddle = this.add.rectangle(400, 575, 75, 10, 0xaaaaaa);
+    this.paddle = this.physics.add.image(400, 575, "paddle");
     this.paddleSpeed = 3;
 
     // Ball
     this.BALL_MAX_SPEED = 5;
 
-    this.ball = this.add.circle(this.paddle.x, this.paddle.y - 10, 5, 0xffffff);
+    // this.ball = this.add.circle(this.paddle.x, this.paddle.y - 10, 5, 0xffffff);
+    this.physics.add.existing(this.paddle);
+    this.ball = this.physics.add.image(
+      this.paddle.x,
+      this.paddle.y - 10,
+      "ball"
+    );
     this.ball.setCircle(5);
+    this.ball.setBounce(1);
+    this.ball.width = 10;
+    this.ball.height = 10;
+
     console.log(this.ball);
+
     this.isBallLaunched = false;
+    this.isBallAlive = true;
     this.ballVelocity = new Phaser.Math.Vector2(0, 0);
     this.ballAcceleration = 3;
     this.ballDirection = new Phaser.Math.Vector2(0, -1);
+
+    this.physics.add.collider(this.paddle, this.ball, () => {
+      this.ballDirection.y = -1;
+    });
   }
   update() {
     if (this.left.isDown) {
@@ -81,7 +99,7 @@ class BrickBreak extends Phaser.Scene {
     }
     this.createBounds(this.paddle, this.ball, this.ballDirection);
     this.ballLaunchControls(this.ball, this.paddle);
-    if (this.isBallLaunched === true) {
+    if (this.isBallLaunched === true && this.isBallAlive === true) {
       this.ball.x += this.ballDirection.x * this.ballAcceleration;
       this.ball.y += this.ballDirection.y * this.ballAcceleration;
     }
@@ -100,6 +118,10 @@ class BrickBreak extends Phaser.Scene {
     if (ball.y - 5 <= 0) {
       ballDirection.y = 1;
     }
+    if (ball.y - 5 >= 600) {
+      this.isBallAlive = false;
+      ball.destroy();
+    }
   }
   ballLaunchControls(ball, player) {
     if (this.spacebar.isDown) {
@@ -115,9 +137,10 @@ const config = {
   width: 800,
   height: 600,
   physics: {
-    default: "matter",
+    default: "arcade",
     arcade: {
       gravity: { y: 0 },
+      // debug: true,
     },
   },
   scene: BrickBreak,
