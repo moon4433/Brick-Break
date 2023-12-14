@@ -30,7 +30,14 @@
 //   }
 // }
 
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
+}
+
 class BrickBreak extends Phaser.Scene {
+  hsv;
   constructor() {
     super();
   }
@@ -38,6 +45,7 @@ class BrickBreak extends Phaser.Scene {
     this.load.image("background", "img/granite.jpg");
     this.load.image("ball", "img/ball.png");
     this.load.image("paddle", "img/paddle.png");
+    this.load.image("brick", "img/brick.png");
   }
   create() {
     this.background = this.add.image(400, 300, "background");
@@ -59,9 +67,6 @@ class BrickBreak extends Phaser.Scene {
 
     // Ball
     this.BALL_MAX_SPEED = 5;
-
-    // this.ball = this.add.circle(this.paddle.x, this.paddle.y - 10, 5, 0xffffff);
-    this.physics.add.existing(this.paddle);
     this.ball = this.physics.add.image(
       this.paddle.x,
       this.paddle.y - 10,
@@ -71,18 +76,43 @@ class BrickBreak extends Phaser.Scene {
     this.ball.setBounce(1);
     this.ball.width = 10;
     this.ball.height = 10;
-
-    console.log(this.ball);
-
     this.isBallLaunched = false;
     this.isBallAlive = true;
-    this.ballVelocity = new Phaser.Math.Vector2(0, 0);
     this.ballAcceleration = 3;
     this.ballDirection = new Phaser.Math.Vector2(0, -1);
 
+    // Bricks
+    const group = this.physics.add.group({
+      key: ["brick"],
+      frame: [0],
+      repeat: 399,
+    });
+
+    Phaser.Actions.GridAlign(group.getChildren(), {
+      width: 20,
+      height: 20,
+      cellWidth: 40,
+      cellHeight: 15,
+      x: 0,
+      y: 0,
+    });
+    this.hsv = Phaser.Display.Color.HSVColorWheel();
+
+    const tint = this.hsv[getRandomInt(0, 256)];
+
+    Phaser.Actions.SetTint(group.getChildren(), tint.color);
+    group.getChildren().forEach((child) => {});
+
+    //Collision
     this.physics.add.collider(this.paddle, this.ball, () => {
       this.ballDirection.y = -1;
     });
+    this.physics.add.collider(this.ball, group.getChildren(), (ball, brick) => {
+      brick.destroy();
+      this.ballDirection.y = 1;
+    });
+
+    //UI
   }
   update() {
     if (this.left.isDown) {
@@ -90,11 +120,14 @@ class BrickBreak extends Phaser.Scene {
       if (this.isBallLaunched === false) {
         this.ballDirection.x = -1;
       }
-    }
-    if (this.right.isDown) {
+    } else if (this.right.isDown) {
       this.paddle.x += this.paddleSpeed;
       if (this.isBallLaunched === false) {
         this.ballDirection.x = 1;
+      }
+    } else {
+      if (this.isBallLaunched === false) {
+        this.ballDirection.x = 0;
       }
     }
     this.createBounds(this.paddle, this.ball, this.ballDirection);
@@ -132,15 +165,16 @@ class BrickBreak extends Phaser.Scene {
   }
 }
 
+// game is set for 600 height but has extra for hud
 const config = {
   type: Phaser.AUTO,
   width: 800,
-  height: 600,
+  height: 625,
   physics: {
     default: "arcade",
     arcade: {
       gravity: { y: 0 },
-      // debug: true,
+      debug: true,
     },
   },
   scene: BrickBreak,
