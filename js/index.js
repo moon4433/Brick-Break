@@ -98,18 +98,33 @@ class BrickBreak extends Phaser.Scene {
     });
     this.hsv = Phaser.Display.Color.HSVColorWheel();
 
-    const tint = this.hsv[getRandomInt(0, 256)];
-
-    Phaser.Actions.SetTint(group.getChildren(), tint.color);
-    group.getChildren().forEach((child) => {});
+    group.getChildren().forEach((child) => {
+      const tint = this.hsv[getRandomInt(0, 256)];
+      child.setTint(tint.color);
+    });
 
     //Collision
     this.physics.add.collider(this.paddle, this.ball, () => {
       this.ballDirection.y = -1;
     });
     this.physics.add.collider(this.ball, group.getChildren(), (ball, brick) => {
+      if (ball.body.x + 5 > brick.body.x - 20) {
+        this.ballDirection.x = -1;
+        console.log("1");
+      } else {
+        this.ballDirection.x = 1;
+        console.log("2");
+      }
+      if (ball.body.y - 5 > brick.body.y + 7.5) {
+        this.ballDirection.y = 1;
+        console.log("3");
+      } else {
+        this.ballDirection.y = -1;
+        console.log("4");
+      }
+
+      console.log(ball.body);
       brick.destroy();
-      this.ballDirection.y = 1;
     });
 
     //UI
@@ -174,7 +189,7 @@ const config = {
     default: "arcade",
     arcade: {
       gravity: { y: 0 },
-      debug: true,
+      // debug: true,
     },
   },
   scene: BrickBreak,
