@@ -60,10 +60,14 @@ class BrickBreak extends Phaser.Scene {
     this.spacebar = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.SPACE
     );
+    this.physics.world.setBounds(0, 0, 800, 600, true, true, true, false);
+    this.physics.world.setBounds(0, 0, 800, 600, true, true, true, false);
 
     // Paddle
     this.paddle = this.physics.add.image(400, 575, "paddle");
-    this.paddleSpeed = 3;
+    this.paddleSpeed = 250;
+    this.paddle.setCollideWorldBounds(true);
+    this.paddle.body.immovable = true;
 
     // Ball
     this.BALL_MAX_SPEED = 5;
@@ -73,12 +77,13 @@ class BrickBreak extends Phaser.Scene {
       "ball"
     );
     this.ball.setCircle(5);
-    this.ball.setBounce(1);
+    this.ball.setBounce(1, 1);
+    this.ball.setCollideWorldBounds(true, this.ballSpeed, this.ballSpeed);
     this.ball.width = 10;
     this.ball.height = 10;
     this.isBallLaunched = false;
     this.isBallAlive = true;
-    this.ballAcceleration = 3;
+    this.ballSpeed = 200;
     this.ballDirection = new Phaser.Math.Vector2(0, -1);
 
     // Bricks
@@ -101,78 +106,45 @@ class BrickBreak extends Phaser.Scene {
     group.getChildren().forEach((child) => {
       const tint = this.hsv[getRandomInt(0, 256)];
       child.setTint(tint.color);
+      child.body.immovable = true;
     });
 
     //Collision
-    this.physics.add.collider(this.paddle, this.ball, () => {
-      this.ballDirection.y = -1;
-    });
-    this.physics.add.collider(this.ball, group.getChildren(), (ball, brick) => {
-      if (ball.body.x + 5 > brick.body.x - 20) {
-        this.ballDirection.x = -1;
-        console.log("1");
-      } else {
-        this.ballDirection.x = 1;
-        console.log("2");
-      }
-      if (ball.body.y - 5 > brick.body.y + 7.5) {
-        this.ballDirection.y = 1;
-        console.log("3");
-      } else {
-        this.ballDirection.y = -1;
-        console.log("4");
-      }
-
-      console.log(ball.body);
-      brick.destroy();
-    });
+    this.physics.add.collider(this.paddle, this.ball);
+    this.physics.add.collider(group.getChildren(), this.ball);
 
     //UI
   }
   update() {
     if (this.left.isDown) {
-      this.paddle.x -= this.paddleSpeed;
+      // this.paddle.x -= this.paddleSpeed;
+      this.paddle.body.setVelocityX(-this.paddleSpeed);
       if (this.isBallLaunched === false) {
-        this.ballDirection.x = -1;
+        this.ball.body.setVelocityX(-this.ballSpeed);
       }
     } else if (this.right.isDown) {
-      this.paddle.x += this.paddleSpeed;
+      // this.paddle.x += this.paddleSpeed;
+      this.paddle.body.setVelocityX(this.paddleSpeed);
       if (this.isBallLaunched === false) {
-        this.ballDirection.x = 1;
+        this.ball.body.setVelocityX(this.ballSpeed);
       }
     } else {
+      this.paddle.body.setVelocityX(0);
       if (this.isBallLaunched === false) {
-        this.ballDirection.x = 0;
+        this.ball.body.setVelocityX(0);
       }
     }
-    this.createBounds(this.paddle, this.ball, this.ballDirection);
+    this.checkBottomBounds(this.ball);
     this.ballLaunchControls(this.ball, this.paddle);
-    if (this.isBallLaunched === true && this.isBallAlive === true) {
-      this.ball.x += this.ballDirection.x * this.ballAcceleration;
-      this.ball.y += this.ballDirection.y * this.ballAcceleration;
-    }
   }
-  createBounds(player, ball, ballDirection) {
-    if (player.x + 37.5 >= 800) {
-      player.x = 800 - 37.5;
-    } else if (player.x - 37.5 <= 0) {
-      player.x = 0 + 37.5;
-    }
-    if (ball.x - 5 <= 0) {
-      ballDirection.x = 1;
-    } else if (ball.x + 5 >= 800) {
-      ballDirection.x = -1;
-    }
-    if (ball.y - 5 <= 0) {
-      ballDirection.y = 1;
-    }
+  checkBottomBounds(ball) {
     if (ball.y - 5 >= 600) {
-      this.isBallAlive = false;
       ball.destroy();
     }
   }
   ballLaunchControls(ball, player) {
     if (this.spacebar.isDown) {
+      ball.body.setVelocityY(-this.ballSpeed);
       this.isBallLaunched = true;
     } else if (this.isBallLaunched === false) {
       ball.x = player.x;
